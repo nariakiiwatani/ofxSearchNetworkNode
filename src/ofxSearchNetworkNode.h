@@ -78,8 +78,11 @@ private:
 		});
 	}
 	
-	ofxOscMessage createRequestMessage(const std::string &group, const std::string &self_ip) const;
-	ofxOscMessage createResponseMessage(const std::string &self_ip) const;
+	using HashType = std::uint32_t;
+	HashType makeHash(const std::string &self_ip) const;
+	bool checkHash(HashType hash, const std::string &remote_ip) const;
+	ofxOscMessage createRequestMessage(const std::string &group, HashType key) const;
+	ofxOscMessage createResponseMessage(HashType key) const;
 	ofxOscMessage createDisconnectMessage() const;
 	ofxOscMessage createHeartbeatMessage() const;
 	
@@ -108,8 +111,4 @@ private:
 	bool is_secret_mode_=false;
 	std::string secret_key_;
 	std::string getSelfIp(const std::string &hint);
-	
-	using HashType = std::uint32_t;
-	HashType makeHash(const std::string &self_ip) const;
-	bool checkHash(HashType hash, const std::string &remote_ip) const;
 };

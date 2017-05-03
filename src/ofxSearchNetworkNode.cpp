@@ -52,7 +52,7 @@ void ofxSearchNetworkNode::setup(int port, const std::string &name, const std::s
 void ofxSearchNetworkNode::request(const std::string &group)
 {
 	for_each(begin(target_ip_), end(target_ip_), [this,&group](std::string &ip) {
-		sendMessage(ip, createRequestMessage(group==""?ofJoinString(group_,","):group, getSelfIp(ip)));
+		sendMessage(ip, createRequestMessage(group==""?ofJoinString(group_,","):group, is_secret_mode_?makeHash(getSelfIp(ip)):0));
 	});
 }
 void ofxSearchNetworkNode::flush()
@@ -173,7 +173,7 @@ void ofxSearchNetworkNode::messageReceived(ofxOscMessage &msg)
 			registerNode(ip,
 						 msg.getArgAsString(2), msg.getArgAsString(3),
 						 msg.getArgAsBool(4), msg.getArgAsFloat(5));
-			sendMessage(ip, createResponseMessage(getSelfIp(ip)));
+			sendMessage(ip, createResponseMessage(is_secret_mode_?makeHash(getSelfIp(ip)):0));
 		}
 	}
 	else if(address == "/ofxSearchNetworkNode/response") {
@@ -212,23 +212,23 @@ void ofxSearchNetworkNode::messageReceived(ofxOscMessage &msg)
 		}
 	}
 }
-ofxOscMessage ofxSearchNetworkNode::createRequestMessage(const std::string &group, const std::string &self_ip) const
+ofxOscMessage ofxSearchNetworkNode::createRequestMessage(const std::string &group, HashType key) const
 {
 	ofxOscMessage ret;
 	ret.setAddress("/ofxSearchNetworkNode/request");
 	ret.addStringArg(group);
-	ret.addInt32Arg(is_secret_mode_?makeHash(self_ip):0);
+	ret.addInt32Arg(key);
 	ret.addStringArg(name_);
 	ret.addStringArg(ofJoinString(group_,","));
 	ret.addBoolArg(need_heartbeat_);
 	ret.addFloatArg(heartbeat_request_interval_);
 	return move(ret);
 }
-ofxOscMessage ofxSearchNetworkNode::createResponseMessage(const std::string &self_ip) const
+ofxOscMessage ofxSearchNetworkNode::createResponseMessage(HashType key) const
 {
 	ofxOscMessage ret;
 	ret.setAddress("/ofxSearchNetworkNode/response");
-	ret.addInt32Arg(is_secret_mode_?makeHash(self_ip):0);
+	ret.addInt32Arg(key);
 	ret.addStringArg(name_);
 	ret.addStringArg(ofJoinString(group_,","));
 	ret.addBoolArg(need_heartbeat_);
