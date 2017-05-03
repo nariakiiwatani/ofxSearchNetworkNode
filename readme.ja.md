@@ -1,3 +1,5 @@
+[english version](readme.md)
+
 # ofxSearchNetworkNode
 
 ネットワーク上のノードを探してリストアップします。  
@@ -6,7 +8,7 @@
 - IPv4のみ対応
 - macOSとiOSで動作確認済み
 - Linuxでも動くはず（動作未確認）
-- Windowsでは一部機能が動きません。`libs/IPAddress.cpp`のみ適切に書き換えれば動くはずです。。
+- 他の環境では一部機能が動きません。`libs/IPAddress.cpp`のみ適切に書き換えれば動くはずです。。
 
 ## declare
 ```
@@ -19,7 +21,7 @@ ofxSearchNetworkNode search;
 // ノードの検索に使うIPアドレスを指定します。
 // 通常はブロードキャストアドレスを指定しますが、ユニキャストアドレスも指定可能です。（カンマ区切りで複数指定可）
 // 指定しない場合、自動でブロードキャストアドレスを検出します。
-// いまのところWindows環境では自動検出が働かないので、この値は必ず設定してください。
+// いまのところmacOS,iOS,Linux以外の環境では自動検出が働かないので、この値は必ず設定してください。
 search.setTargetIp("192.168.0.255");
 
 // (optional)
@@ -56,7 +58,7 @@ search.request();
 ## get node list
 
 ```
-const std::map<string, ofxSearchNetworkNode::Node> &nodes = net_.getNodes();
+const std::map<string, ofxSearchNetworkNode::Node> &nodes = search.getNodes();
 ```
 
 ## events
