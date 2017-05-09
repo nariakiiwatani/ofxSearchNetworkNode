@@ -215,6 +215,9 @@ void ofxSearchNetworkNode::messageReceived(ofxOscMessage &msg)
 			}
 		}
 	}
+	else {
+		ofNotifyEvent(unhandledMessageReceived, msg, this);
+	}
 }
 ofxOscMessage ofxSearchNetworkNode::createRequestMessage(const std::string &group, HashType key) const
 {

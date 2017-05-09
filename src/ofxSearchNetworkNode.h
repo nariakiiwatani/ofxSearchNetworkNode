@@ -25,6 +25,9 @@ public:
 	void setTargetIp(const std::string &ip) { target_ip_ = ofSplitString(ip,",",true); }
 	void setAllowLoopback(bool allow) { allow_loopback_ = allow; }
 	void setPrefix(const std::string &prefix) { prefix_ = prefix; }
+	
+	ofEvent<ofxOscMessage> unhandledMessageReceived;
+	
 	struct Node {
 		std::string name;
 		std::string group;
