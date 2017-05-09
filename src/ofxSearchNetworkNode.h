@@ -24,6 +24,7 @@ public:
 	void setup(int port, const std::string &name, const std::string &group="");
 	void setTargetIp(const std::string &ip) { target_ip_ = ofSplitString(ip,",",true); }
 	void setAllowLoopback(bool allow) { allow_loopback_ = allow; }
+	void setPrefix(const std::string &prefix) { prefix_ = prefix; }
 	struct Node {
 		std::string name;
 		std::string group;
@@ -94,6 +95,7 @@ private:
 	bool allow_loopback_=false;
 	bool is_sleep_=false;
 	ofxOscReceiver receiver_;
+	std::string prefix_;
 	
 	std::map<std::string, Node> known_nodes_;
 	std::vector<IPAddress::IPv4> self_ip_;

@@ -13,6 +13,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include "ofxSearchNetworkNode.h"
 
 ofxSearchNetworkNode::ofxSearchNetworkNode()
+:prefix_("ofxSearchNetworkNode")
 {
 	self_ip_ = IPAddress::getv4();
 	for_each(begin(self_ip_), end(self_ip_), [this](const IPAddress::IPv4 &ip) {
@@ -154,68 +155,71 @@ std::string ofxSearchNetworkNode::getSelfIp(const std::string &hint)
 
 void ofxSearchNetworkNode::messageReceived(ofxOscMessage &msg)
 {
-	const string &address = msg.getAddress();
-	if(address == "/ofxSearchNetworkNode/request") {
-		string ip = msg.getRemoteIp();
-		if(!allow_loopback_ && isSelfIp(ip)) {
-			return;
-		}
-		int32_t secret_key = msg.getArgAsInt32(1);
-		if(secret_key != 0 || is_secret_mode_) {
-			if(!checkHash(secret_key, ip)) {
+	const auto &&address = ofSplitString(msg.getAddress(), "/", false);
+	if(address.size() >= 2 && address[0] == "" && address[1] == prefix_) {
+		const string &method = address.size()>=3?address[2]:"";
+		if(method == "request") {
+			string ip = msg.getRemoteIp();
+			if(!allow_loopback_ && isSelfIp(ip)) {
 				return;
 			}
+			int32_t secret_key = msg.getArgAsInt32(1);
+			if(secret_key != 0 || is_secret_mode_) {
+				if(!checkHash(secret_key, ip)) {
+					return;
+				}
+			}
+			vector<string> groups = ofSplitString(msg.getArgAsString(0), ",");
+			if(any_of(begin(groups), end(groups), [this](string &group) {
+				return ofContains(group_, group);
+			})) {
+				registerNode(ip,
+							 msg.getArgAsString(2), msg.getArgAsString(3),
+							 msg.getArgAsBool(4), msg.getArgAsFloat(5));
+				sendMessage(ip, createResponseMessage(is_secret_mode_?makeHash(getSelfIp(ip)):0));
+			}
 		}
-		vector<string> groups = ofSplitString(msg.getArgAsString(0), ",");
-		if(any_of(begin(groups), end(groups), [this](string &group) {
-			return ofContains(group_, group);
-		})) {
+		else if(method == "response") {
+			string ip = msg.getRemoteIp();
+			int32_t secret_key = msg.getArgAsInt32(0);
+			if(secret_key != 0 || is_secret_mode_) {
+				if(!checkHash(secret_key, ip)) {
+					return;
+				}
+			}
 			registerNode(ip,
-						 msg.getArgAsString(2), msg.getArgAsString(3),
-						 msg.getArgAsBool(4), msg.getArgAsFloat(5));
-			sendMessage(ip, createResponseMessage(is_secret_mode_?makeHash(getSelfIp(ip)):0));
+						 msg.getArgAsString(1), msg.getArgAsString(2),
+						 msg.getArgAsBool(3), msg.getArgAsFloat(4));
 		}
-	}
-	else if(address == "/ofxSearchNetworkNode/response") {
-		string ip = msg.getRemoteIp();
-		int32_t secret_key = msg.getArgAsInt32(0);
-		if(secret_key != 0 || is_secret_mode_) {
-			if(!checkHash(secret_key, ip)) {
+		else if(method == "disconnect") {
+			string ip = msg.getRemoteIp();
+			auto it = known_nodes_.find(ip);
+			if(it == end(known_nodes_)) {
+				ofLogWarning("received disconnected message from unknown node : " + ip);
 				return;
 			}
+			unregisterNode(ip, it->second);
 		}
-		registerNode(ip,
-					 msg.getArgAsString(1), msg.getArgAsString(2),
-					 msg.getArgAsBool(3), msg.getArgAsFloat(4));
-	}
-	else if(address == "/ofxSearchNetworkNode/disconnect") {
-		string ip = msg.getRemoteIp();
-		auto it = known_nodes_.find(ip);
-		if(it == end(known_nodes_)) {
-			ofLogWarning("received disconnected message from unknown node : " + ip);
-			return;
-		}
-		unregisterNode(ip, it->second);
-	}
-	else if(address == "/ofxSearchNetworkNode/heartbeat") {
-		string ip = msg.getRemoteIp();
-		auto it = heartbeat_recv_.find(ip);
-		if(it == end(heartbeat_recv_)) {
-			ofLogWarning("received heartbeat message from unknown node : " + ip);
-			return;
-		}
-		it->second.timer = 0;
-		auto node = known_nodes_.find(ip);
-		if(node != end(known_nodes_) && node->second.lost) {
-			node->second.lost = false;
-			ofNotifyEvent(nodeReconnected, *node);
+		else if(method == "heartbeat") {
+			string ip = msg.getRemoteIp();
+			auto it = heartbeat_recv_.find(ip);
+			if(it == end(heartbeat_recv_)) {
+				ofLogWarning("received heartbeat message from unknown node : " + ip);
+				return;
+			}
+			it->second.timer = 0;
+			auto node = known_nodes_.find(ip);
+			if(node != end(known_nodes_) && node->second.lost) {
+				node->second.lost = false;
+				ofNotifyEvent(nodeReconnected, *node);
+			}
 		}
 	}
 }
 ofxOscMessage ofxSearchNetworkNode::createRequestMessage(const std::string &group, HashType key) const
 {
 	ofxOscMessage ret;
-	ret.setAddress("/ofxSearchNetworkNode/request");
+	ret.setAddress(ofJoinString({"",prefix_,"request"},"/"));
 	ret.addStringArg(group);
 	ret.addInt32Arg(key);
 	ret.addStringArg(name_);
@@ -227,7 +231,7 @@ ofxOscMessage ofxSearchNetworkNode::createRequestMessage(const std::string &grou
 ofxOscMessage ofxSearchNetworkNode::createResponseMessage(HashType key) const
 {
 	ofxOscMessage ret;
-	ret.setAddress("/ofxSearchNetworkNode/response");
+	ret.setAddress(ofJoinString({"",prefix_,"response"},"/"));
 	ret.addInt32Arg(key);
 	ret.addStringArg(name_);
 	ret.addStringArg(ofJoinString(group_,","));
@@ -238,13 +242,13 @@ ofxOscMessage ofxSearchNetworkNode::createResponseMessage(HashType key) const
 ofxOscMessage ofxSearchNetworkNode::createDisconnectMessage() const
 {
 	ofxOscMessage ret;
-	ret.setAddress("/ofxSearchNetworkNode/disconnect");
+	ret.setAddress(ofJoinString({"",prefix_,"disconnect"},"/"));
 	return move(ret);
 }
 ofxOscMessage ofxSearchNetworkNode::createHeartbeatMessage() const
 {
 	ofxOscMessage ret;
-	ret.setAddress("/ofxSearchNetworkNode/heartbeat");
+	ret.setAddress(ofJoinString({"",prefix_,"heartbeat"},"/"));
 	return move(ret);
 }
 void ofxSearchNetworkNode::disconnect()
