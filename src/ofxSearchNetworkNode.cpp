@@ -46,10 +46,16 @@ ofxSearchNetworkNode::~ofxSearchNetworkNode()
 void ofxSearchNetworkNode::setup(int port, const std::string &name, const std::string &group)
 {
 	name_ = name;
-	group_ = ofSplitString(group, ",");
 	port_ = port;
 	receiver_.setup(port);
+	addToGroup(group);
 }
+void ofxSearchNetworkNode::addToGroup(const std::string &group)
+{
+	auto new_groups = ofSplitString(group, ",", true);
+	group_.insert(end(group_), begin(new_groups), end(new_groups));
+}
+
 void ofxSearchNetworkNode::request(const std::string &group)
 {
 	for_each(begin(target_ip_), end(target_ip_), [this,&group](std::string &ip) {

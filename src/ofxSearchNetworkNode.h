@@ -26,6 +26,8 @@ public:
 	void setAllowLoopback(bool allow) { allow_loopback_ = allow; }
 	void setPrefix(const std::string &prefix) { prefix_ = prefix; }
 	
+	void addToGroup(const std::string &group);
+	
 	ofEvent<ofxOscMessage> unhandledMessageReceived;
 	
 	struct Node {
