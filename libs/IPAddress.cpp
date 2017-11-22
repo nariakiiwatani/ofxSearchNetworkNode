@@ -59,6 +59,62 @@ bool IPAddress::IPv4::isInSameNetwork(const std::string &hint) const
 	return (ip_raw&netmask_raw) == (inet_addr(hint.c_str())&netmask_raw);
 }
 
+#elif defined(TARGET_WIN32)
+#include <ws2tcpip.h>
+std::vector<IPAddress::IPv4> IPAddress::getv4()
+{
+	WSADATA ws_data;
+	if(WSAStartup(WINSOCK_VERSION, &ws_data) != 0) {
+		return {};
+	}
+
+	SOCKET socket = WSASocket(AF_INET, SOCK_DGRAM, 0, 0, 0, 0);
+	if(socket == SOCKET_ERROR) {
+		return {};
+	}
+
+	INTERFACE_INFO if_info[32];
+	unsigned long num_bytes;
+	if(WSAIoctl(socket, SIO_GET_INTERFACE_LIST, 0, 0, &if_info, sizeof(if_info), &num_bytes, 0, 0) == SOCKET_ERROR) {
+		return {};
+	}
+
+	vector<IPv4> ret;
+	int num_if = num_bytes/sizeof(INTERFACE_INFO);
+	for(int i = 0, num = num_bytes/sizeof(INTERFACE_INFO); i < num; ++i) {
+		INTERFACE_INFO info = if_info[i];
+		u_long flags = info.iiFlags;
+
+		IPv4 result;
+		char name[256];
+		if(getnameinfo(&info.iiAddress.Address, sizeof(info.iiAddress.Address), name, sizeof(name), NULL, 0, NI_DGRAM) != 0) {
+			continue;
+		}
+		result.name = name;
+		auto get_address = [](sockaddr_in *ifa_addr, unsigned int &dst_raw, string &dst_str) {
+			char str[INET_ADDRSTRLEN] = {};
+			dst_raw = ifa_addr->sin_addr.s_addr;
+			inet_ntop(AF_INET, &dst_raw, str, sizeof(str));
+			dst_str = str;
+		};
+		get_address(&info.iiAddress.AddressIn, result.ip_raw, result.ip);
+		get_address(&info.iiNetmask.AddressIn, result.netmask_raw, result.netmask);
+		if((flags & IFF_BROADCAST) != 0) {
+			get_address(&info.iiBroadcastAddress.AddressIn, result.broadcast_raw, result.broadcast);
+		}
+		else {
+			result.broadcast_raw = 0;
+			result.broadcast = "";
+		}
+		ret.push_back(result);
+	}
+	WSACleanup();
+	return ret;
+}
+bool IPAddress::IPv4::isInSameNetwork(const std::string &hint) const
+{
+	return (ip_raw&netmask_raw) == (inet_addr(hint.c_str())&netmask_raw);
+}
 #else
 std::vector<IPAddress::IPv4> IPAddress::getv4() { return {}; }
 bool IPAddress::IPv4::isInSameNetwork(const std::string &hint) const { return false; }
