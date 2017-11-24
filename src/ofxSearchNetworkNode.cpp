@@ -145,6 +145,14 @@ void ofxSearchNetworkNode::lostNode(const std::string &ip)
 		ofNotifyEvent(nodeLost, *it);
 	}
 }
+void ofxSearchNetworkNode::reconnectNode(const std::string &ip)
+{
+	auto it = known_nodes_.find(ip);
+	if(it != end(known_nodes_) && !it->second.lost) {
+		it->second.lost = false;
+		ofNotifyEvent(nodeReconnected, *it);
+	}
+}
 
 bool ofxSearchNetworkNode::isSelfIp(const std::string &ip) const
 {
@@ -216,8 +224,7 @@ void ofxSearchNetworkNode::messageReceived(ofxOscMessage &msg)
 			it->second.timer = 0;
 			auto node = known_nodes_.find(ip);
 			if(node != end(known_nodes_) && node->second.lost) {
-				node->second.lost = false;
-				ofNotifyEvent(nodeReconnected, *node);
+				reconnectNode(ip);
 			}
 		}
 	}
