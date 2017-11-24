@@ -14,7 +14,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include "ofEvents.h"
 #include "ofxOsc.h"
-#include "IPAddress.h"
+#include "NetworkUtils.h"
 
 class ofxSearchNetworkNode
 {
@@ -103,7 +103,7 @@ private:
 	std::string prefix_;
 	
 	std::map<std::string, Node> known_nodes_;
-	std::vector<IPAddress::IPv4> self_ip_;
+	std::vector<NetworkUtils::IPv4Interface> self_ip_;
 	
 	bool need_heartbeat_=true;
 	float heartbeat_request_interval_=1;
@@ -117,5 +117,5 @@ private:
 	
 	bool is_secret_mode_=false;
 	std::string secret_key_;
-	std::string getSelfIp(const std::string &hint);
+	std::string getSelfIp(const std::string &an_ip_in_same_netwotk);
 };

@@ -10,7 +10,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "IPAddress.h"
+#include "NetworkUtils.h"
 #include "ofConstants.h"
 
 #if defined(TARGET_OSX) || defined(TARGET_OF_IOS) || defined(TARGET_LINUX)
@@ -21,16 +21,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 using namespace std;
 
-std::vector<IPAddress::IPv4> IPAddress::getv4()
+std::vector<NetworkUtils::IPv4Interface> NetworkUtils::getIPv4Interface()
 {
 	struct ifaddrs *ifas, *ifa;
 	if(getifaddrs(&ifas) != 0) {
 		return {};
 	}
-	vector<IPv4> ret;
+	vector<IPv4Interface> ret;
 	for(ifa = ifas; ifa != nullptr; ifa=ifa->ifa_next) {
 		if (ifa->ifa_addr->sa_family == AF_INET) {
-			IPv4 result;
+			IPv4Interface result;
 			result.name = ifa->ifa_name;
 			auto get_address = [](sockaddr_in *ifa_addr, unsigned int &dst_raw, string &dst_str) {
 				char str[INET_ADDRSTRLEN] = {};
@@ -54,14 +54,14 @@ std::vector<IPAddress::IPv4> IPAddress::getv4()
 	return ret;
 }
 
-bool IPAddress::IPv4::isInSameNetwork(const std::string &hint) const
+bool NetworkUtils::IPv4Interface::isInSameNetwork(const std::string &hint) const
 {
 	return (ip_raw&netmask_raw) == (inet_addr(hint.c_str())&netmask_raw);
 }
 
 #elif defined(TARGET_WIN32)
 #include <ws2tcpip.h>
-std::vector<IPAddress::IPv4> IPAddress::getv4()
+std::vector<NetworkUtils::IPv4Interface> NetworkUtils::getIPv4Interface()
 {
 	WSADATA ws_data;
 	if(WSAStartup(WINSOCK_VERSION, &ws_data) != 0) {
@@ -79,13 +79,13 @@ std::vector<IPAddress::IPv4> IPAddress::getv4()
 		return {};
 	}
 
-	vector<IPv4> ret;
+	vector<IPv4Interface> ret;
 	int num_if = num_bytes/sizeof(INTERFACE_INFO);
 	for(int i = 0, num = num_bytes/sizeof(INTERFACE_INFO); i < num; ++i) {
 		INTERFACE_INFO info = if_info[i];
 		u_long flags = info.iiFlags;
 
-		IPv4 result;
+		IPv4Interface result;
 		char name[256];
 		if(getnameinfo(&info.iiAddress.Address, sizeof(info.iiAddress.Address), name, sizeof(name), NULL, 0, NI_DGRAM) != 0) {
 			continue;
@@ -111,11 +111,11 @@ std::vector<IPAddress::IPv4> IPAddress::getv4()
 	WSACleanup();
 	return ret;
 }
-bool IPAddress::IPv4::isInSameNetwork(const std::string &hint) const
+bool NetworkUtils::IPv4Interface::isInSameNetwork(const std::string &hint) const
 {
 	return (ip_raw&netmask_raw) == (inet_addr(hint.c_str())&netmask_raw);
 }
 #else
-std::vector<IPAddress::IPv4> IPAddress::getv4() { return {}; }
-bool IPAddress::IPv4::isInSameNetwork(const std::string &hint) const { return false; }
+std::vector<NetworkUtils::IPv4Interface> NetworkUtils::getIPv4Interface() { return {}; }
+bool NetworkUtils::IPv4Interface::isInSameNetwork(const std::string &hint) const { return false; }
 #endif

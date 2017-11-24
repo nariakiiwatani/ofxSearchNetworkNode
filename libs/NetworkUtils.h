@@ -15,13 +15,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vector>
 #include <string>
 
-namespace IPAddress
+namespace NetworkUtils
 {
-	struct IPv4 {
+	struct IPv4Interface {
 		std::string name;
 		std::string ip, netmask, broadcast;
 		unsigned int ip_raw, netmask_raw, broadcast_raw;
 		bool isInSameNetwork(const std::string &hint) const;
 	};
-	std::vector<IPv4> getv4();
+	std::vector<IPv4Interface> getIPv4Interface();
 };

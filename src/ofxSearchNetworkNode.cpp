@@ -15,8 +15,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 ofxSearchNetworkNode::ofxSearchNetworkNode()
 :prefix_("ofxSearchNetworkNode")
 {
-	self_ip_ = IPAddress::getv4();
-	for_each(begin(self_ip_), end(self_ip_), [this](const IPAddress::IPv4 &ip) {
+	self_ip_ = NetworkUtils::getIPv4Interface();
+	for_each(begin(self_ip_), end(self_ip_), [this](const NetworkUtils::IPv4Interface &ip) {
 		if(ip.broadcast != "") {
 			target_ip_.push_back(ip.broadcast);
 		}
@@ -148,12 +148,12 @@ void ofxSearchNetworkNode::lostNode(const std::string &ip)
 
 bool ofxSearchNetworkNode::isSelfIp(const std::string &ip) const
 {
-	return any_of(begin(self_ip_), end(self_ip_), [&ip](const IPAddress::IPv4 &me){return ip==me.ip;});
+	return any_of(begin(self_ip_), end(self_ip_), [&ip](const NetworkUtils::IPv4Interface &me){return ip==me.ip;});
 }
-std::string ofxSearchNetworkNode::getSelfIp(const std::string &hint)
+std::string ofxSearchNetworkNode::getSelfIp(const std::string &an_ip_in_same_netwotk)
 {
-	auto it = find_if(begin(self_ip_), end(self_ip_), [&hint](IPAddress::IPv4 &me) {
-		return me.isInSameNetwork(hint);
+	auto it = find_if(begin(self_ip_), end(self_ip_), [&an_ip_in_same_netwotk](NetworkUtils::IPv4Interface &me) {
+		return me.isInSameNetwork(an_ip_in_same_netwotk);
 	});
 	return it != end(self_ip_) ? it->ip : "";
 }
