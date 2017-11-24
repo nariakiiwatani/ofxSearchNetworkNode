@@ -70,55 +70,49 @@ bool NetworkUtils::IPv4Interface::isInSameNetwork(const std::string &hint) const
 
 #elif defined(TARGET_WIN32)
 #include <ws2tcpip.h>
-std::string NetworkUtils::getHostName(){ return ""; }
+#include <iphlpapi.h>
+std::string NetworkUtils::getHostName()
+{
+	char buf[256] = {};
+	if(gethostname(buf, 256) != 0) {
+		return "";
+	}
+	return buf;
+}
+
 std::vector<NetworkUtils::IPv4Interface> NetworkUtils::getIPv4Interface()
 {
-	WSADATA ws_data;
-	if(WSAStartup(WINSOCK_VERSION, &ws_data) != 0) {
-		return {};
-	}
-
-	SOCKET socket = WSASocket(AF_INET, SOCK_DGRAM, 0, 0, 0, 0);
-	if(socket == SOCKET_ERROR) {
-		return {};
-	}
-
-	INTERFACE_INFO if_info[32];
-	unsigned long num_bytes;
-	if(WSAIoctl(socket, SIO_GET_INTERFACE_LIST, 0, 0, &if_info, sizeof(if_info), &num_bytes, 0, 0) == SOCKET_ERROR) {
-		return {};
-	}
-
-	vector<IPv4Interface> ret;
-	int num_if = num_bytes/sizeof(INTERFACE_INFO);
-	for(int i = 0, num = num_bytes/sizeof(INTERFACE_INFO); i < num; ++i) {
-		INTERFACE_INFO info = if_info[i];
-		u_long flags = info.iiFlags;
-
-		IPv4Interface result;
-		char name[256];
-		if(getnameinfo(&info.iiAddress.Address, sizeof(info.iiAddress.Address), name, sizeof(name), NULL, 0, NI_DGRAM) != 0) {
-			continue;
+	PIP_ADAPTER_ADDRESSES if_info = nullptr;
+	ULONG data_size=0;
+	ULONG flags = GAA_FLAG_INCLUDE_PREFIX;
+	if(GetAdaptersAddresses(AF_INET, flags, NULL, NULL, &data_size) == ERROR_BUFFER_OVERFLOW) {
+		if_info = (PIP_ADAPTER_ADDRESSES)malloc(data_size);
+		if(if_info) {
+			if(GetAdaptersAddresses(AF_INET, flags, NULL, if_info, &data_size) != ERROR_SUCCESS) {
+				free(if_info);
+				return {};
+			}
 		}
-		result.name = name;
-		auto get_address = [](sockaddr_in *ifa_addr, unsigned int &dst_raw, string &dst_str) {
+	}
+	vector<IPv4Interface> ret;
+	while(if_info) {
+		IPv4Interface result;
+		result.name = if_info->AdapterName;
+		ULONG addr = ((sockaddr_in*)(if_info->FirstUnicastAddress->Address.lpSockaddr))->sin_addr.s_addr;
+		ULONG mask;
+		ConvertLengthToIpv4Mask(if_info->FirstUnicastAddress->OnLinkPrefixLength, &mask);
+		auto get_address = [](ULONG addr, unsigned int &dst_raw, string &dst_str) {
 			char str[INET_ADDRSTRLEN] = {};
-			dst_raw = ifa_addr->sin_addr.s_addr;
+			dst_raw = addr;
 			inet_ntop(AF_INET, &dst_raw, str, sizeof(str));
 			dst_str = str;
 		};
-		get_address(&info.iiAddress.AddressIn, result.ip_raw, result.ip);
-		get_address(&info.iiNetmask.AddressIn, result.netmask_raw, result.netmask);
-		if((flags & IFF_BROADCAST) != 0) {
-			get_address(&info.iiBroadcastAddress.AddressIn, result.broadcast_raw, result.broadcast);
-		}
-		else {
-			result.broadcast_raw = 0;
-			result.broadcast = "";
-		}
+		get_address(addr, result.ip_raw, result.ip);
+		get_address(mask, result.netmask_raw, result.netmask);
+		get_address(addr|~mask, result.broadcast_raw, result.broadcast);
 		ret.push_back(result);
+		if_info = if_info->Next;
 	}
-	WSACleanup();
 	return ret;
 }
 bool NetworkUtils::IPv4Interface::isInSameNetwork(const std::string &hint) const
