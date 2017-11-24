@@ -21,7 +21,7 @@ class ofxSearchNetworkNode
 public:
 	ofxSearchNetworkNode();
 	virtual ~ofxSearchNetworkNode();
-	void setup(int port, const std::string &name, const std::string &group="");
+	void setup(int port, const std::string &name="", const std::string &group="");
 	void setTargetIp(const std::string &ip) { target_ip_ = ofSplitString(ip,",",true); }
 	void setAllowLoopback(bool allow) { allow_loopback_ = allow; }
 	void setPrefix(const std::string &prefix) { prefix_ = prefix; }

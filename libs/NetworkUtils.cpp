@@ -21,6 +21,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 using namespace std;
 
+std::string NetworkUtils::getHostName()
+{
+	char buf[256] = {};
+	if(gethostname(buf, 256) != 0) {
+		return "";
+	}
+	return buf;
+}
+
 std::vector<NetworkUtils::IPv4Interface> NetworkUtils::getIPv4Interface()
 {
 	struct ifaddrs *ifas, *ifa;
@@ -61,6 +70,7 @@ bool NetworkUtils::IPv4Interface::isInSameNetwork(const std::string &hint) const
 
 #elif defined(TARGET_WIN32)
 #include <ws2tcpip.h>
+std::string NetworkUtils::getHostName(){ return ""; }
 std::vector<NetworkUtils::IPv4Interface> NetworkUtils::getIPv4Interface()
 {
 	WSADATA ws_data;
@@ -116,6 +126,7 @@ bool NetworkUtils::IPv4Interface::isInSameNetwork(const std::string &hint) const
 	return (ip_raw&netmask_raw) == (inet_addr(hint.c_str())&netmask_raw);
 }
 #else
+std::string NetworkUtils::getHostName(){ return ""; }
 std::vector<NetworkUtils::IPv4Interface> NetworkUtils::getIPv4Interface() { return {}; }
 bool NetworkUtils::IPv4Interface::isInSameNetwork(const std::string &hint) const { return false; }
 #endif

@@ -23,5 +23,6 @@ namespace NetworkUtils
 		unsigned int ip_raw, netmask_raw, broadcast_raw;
 		bool isInSameNetwork(const std::string &hint) const;
 	};
+	std::string getHostName();
 	std::vector<IPv4Interface> getIPv4Interface();
 };

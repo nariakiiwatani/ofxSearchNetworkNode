@@ -14,6 +14,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ofxSearchNetworkNode::ofxSearchNetworkNode()
 :prefix_("ofxSearchNetworkNode")
+,is_sleep_(true)
 {
 	self_ip_ = NetworkUtils::getIPv4Interface();
 	for_each(begin(self_ip_), end(self_ip_), [this](const NetworkUtils::IPv4Interface &ip) {
@@ -21,7 +22,6 @@ ofxSearchNetworkNode::ofxSearchNetworkNode()
 			target_ip_.push_back(ip.broadcast);
 		}
 	});
-	is_sleep_ = true;
 	awake();
 }
 void ofxSearchNetworkNode::sleep()
@@ -45,7 +45,7 @@ ofxSearchNetworkNode::~ofxSearchNetworkNode()
 }
 void ofxSearchNetworkNode::setup(int port, const std::string &name, const std::string &group)
 {
-	name_ = name;
+	name_ = name==""?NetworkUtils::getHostName():name;
 	port_ = port;
 	receiver_.setup(port);
 	addToGroup(group);

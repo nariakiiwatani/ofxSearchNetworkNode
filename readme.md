@@ -8,14 +8,9 @@ You no longer need to check nor type ip addresses.
 - only IPv4 is supported
 - works on macOS and iOS
 - may work on Linux
-- won't fully work on other platforms unless you code a bit for `libs/IPAddress.cpp`.
+- won't fully work on other platforms unless you code a bit for `libs/NetworkUtils.cpp`.
 
-## declare
-```
-ofxSearchNetworkNode search;
-```
-
-## setup
+## Setup
 ```
 // (optional)
 // target IP addresses for finding nodes.
@@ -40,7 +35,8 @@ search.enableSecretMode("secret_key");
 // search.disableSecretMode();
 
 // finally, setup your node with a port and a name
-search.setup(8000, "my node");
+search.setup(8000);
+// with second argument, you can set a name of this node. default is hostname of the machine.
 // with third argument, you can set groups to belong to.
 // you can set multipul groups by comma separated string.
 // nodes in different group won't be shown each other.
@@ -58,13 +54,15 @@ search.request();
 // search.request("awesomegroup");
 ```
 
-## get node list
+## Getting nodes
+
+You can get a list of existing nodes by using `getNodes`.
 
 ```
 const std::map<string, ofxSearchNetworkNode::Node> &nodes = search.getNodes();
 ```
 
-## events
+or you can also notice from event objects
 
 - nodeFound : new node found
 - nodePropertyChanged : node name or group changed
@@ -72,7 +70,6 @@ const std::map<string, ofxSearchNetworkNode::Node> &nodes = search.getNodes();
 - nodeLost : heartbeat from peer not received
 - nodeReconnected : re-received heartbeat from lost node
 
-### usage
 ```
 ofAddListener(search.nodeFound, this, &ofApp::onFoundNode);
 void ofApp::onFoundNode(const std::pair<std::string, ofxSearchNetworkNode::Node> &node) {

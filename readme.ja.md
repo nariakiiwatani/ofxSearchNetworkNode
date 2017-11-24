@@ -8,14 +8,9 @@
 - IPv4のみ対応
 - macOSとiOSで動作確認済み
 - Linuxでも動くはず（動作未確認）
-- 他の環境では一部機能が動きません。`libs/IPAddress.cpp`のみ適切に書き換えれば動くはずです。。
+- 他の環境では一部機能が動きません。`libs/NetworkUtils.cpp`のみ適切に書き換えれば動くはずです。。
 
-## declare
-```
-ofxSearchNetworkNode search;
-```
-
-## setup
+## Setup
 ```
 // (optional)
 // ノードの検索に使うIPアドレスを指定します。
@@ -39,7 +34,8 @@ search.enableSecretMode("secret_key");
 // search.disableSecretMode();
 
 // 上述の設定が終わったら、ポート名とノード名を指定してsetupします。
-search.setup(8000, "my node");
+search.setup(8000);
+// 2番目の引数でこのノードの名前を設定できます。指定しない場合はマシンのホスト名が使われます。
 // 3番目の引数でグループを設定できます。カンマ区切りで複数指定することもできます。
 // 所属するグループが違うノード同士は互いに検索されません。
 // search.setup(8000, "my node", "class1,class2");
@@ -55,13 +51,14 @@ search.request();
 // search.request("awesomegroup");
 ```
 
-## get node list
+## ノードの取得
 
+`getNodes` を使うといつでも現在存在するノードのリストが受け取れます。
 ```
 const std::map<string, ofxSearchNetworkNode::Node> &nodes = search.getNodes();
 ```
 
-## events
+見つかったり見失ったりしたときに通知が欲しい場合は下記のイベントを使用してください。
 
 - nodeFound : 新規ノードが発見された
 - nodePropertyChanged : ノードのプロパティ（名前やグループ名）が変更された
@@ -69,7 +66,8 @@ const std::map<string, ofxSearchNetworkNode::Node> &nodes = search.getNodes();
 - nodeLost : 死活監視信号が途切れた
 - nodeReconnected : 死活監視信号が復帰した
 
-### usage
+イベントの登録や利用の仕方は以下を参考にしてください。
+
 ```
 ofAddListener(search.nodeFound, this, &ofApp::onFoundNode);
 void ofApp::onFoundNode(const std::pair<std::string, ofxSearchNetworkNode::Node> &node) {
