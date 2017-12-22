@@ -6,19 +6,20 @@ Searching and listing up nodes on networks.
 You no longer need to check nor type ip addresses.  
 
 - only IPv4 is supported
-- works on macOS and iOS
+- works on macOS, Windows and iOS
 - may work on Linux
 - won't fully work on other platforms unless you code a bit for `libs/NetworkUtils.cpp`.
 
 ## Setup
 ```
+ofxSearchNetworkNode search;
+
 // (optional)
 // target IP addresses for finding nodes.
-// in many cases this should be a broadcast address, but you can set unicast addresses also.
-// you can set multipul target by comma separated string.
 // by default, valid broadcast addresses are set automatically.
-// for now on Platforms other than macOS,iOS,Linux, you must set this manually else no node will be found.
-search.setTargetIp("192.168.0.255");
+// you can set not only broadcast addresses but also unicast addresses manually.
+// addresses should be separeted by commas.
+search.setTargetIp("192.168.0.255,10.0.0.1");
 
 // (optional)
 // request peers to keep sending heartbeat messages.
@@ -34,7 +35,7 @@ search.setRequestHeartbeat(false);
 search.enableSecretMode("secret_key");
 // search.disableSecretMode();
 
-// finally, setup your node with a port and a name
+// setup your node with a port and a name
 search.setup(8000);
 // with second argument, you can set a name of this node. default is hostname of the machine.
 // with third argument, you can set groups to belong to.
@@ -44,12 +45,11 @@ search.setup(8000);
 
 // broadcast a request message to search nodes.
 // it's enough to send request once (usually at startup).
-// if an other node appeared to the network even after your request
-// she shall also broadcast a request message
-// so you will receive it then you can find her.
-// if your network often lose packets, it's ok to request multipul times or even continuously.
+// because if an other node appeared on the network even after your request
+// she shall also broadcast a request message, so you will receive it then you can find her.
+// in case your network often loses packets, there is no problem for requesting multipul times or even continuously.
 search.request();
-// with group name(s), you can find nodes belonging to certain group(s).
+// provided group name(s) as an argument, you can find nodes belonging to certain group(s).
 // you can even search groups that your node "don't" belong to.
 // search.request("awesomegroup");
 ```

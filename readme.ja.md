@@ -6,18 +6,23 @@
 もうデバイスのIPアドレスを調べて入力する必要はありません。
 
 - IPv4のみ対応
-- macOSとiOSで動作確認済み
+- macOSとWindowsとiOSで動作確認済み
 - Linuxでも動くはず（動作未確認）
 - 他の環境では一部機能が動きません。`libs/NetworkUtils.cpp`のみ適切に書き換えれば動くはずです。。
 
 ## Setup
 ```
+// target IP addresses for finding nodes.
+// by default, valid broadcast addresses are set automatically.
+// you can set not only broadcast addresses but also unicast addresses manually.
+// addresses should be separeted by commas.
+
 // (optional)
 // ノードの検索に使うIPアドレスを指定します。
-// 通常はブロードキャストアドレスを指定しますが、ユニキャストアドレスも指定可能です。（カンマ区切りで複数指定可）
 // 指定しない場合、自動でブロードキャストアドレスを検出します。
-// いまのところmacOS,iOS,Linux以外の環境では自動検出が働かないので、この値は必ず設定してください。
-search.setTargetIp("192.168.0.255");
+// ブロードキャストアドレスでもユニキャストアドレスも指定可能です。
+// カンマ区切りで複数指定も可です。
+search.setTargetIp("192.168.0.255,10.0.0.1");
 
 // (optional)
 // 接続相手に死活確認信号を要求します。
@@ -40,13 +45,19 @@ search.setup(8000);
 // 所属するグループが違うノード同士は互いに検索されません。
 // search.setup(8000, "my node", "class1,class2");
 
+
+// broadcast a request message to search nodes.
+// it's enough to send request once (usually at startup).
+// because if an other node appeared on the network even after your request
+// she shall also broadcast a request message, so you will receive it then you can find her.
+// in case your network often loses packets, there is no problem for requesting multipul times or even continuously.
 // requestを呼ぶと、ノードを探すためのメッセージがブロードキャストされます。
 // 多くの場合、requestはプログラム起動時に一度呼べば十分です。
 // 他のノードが後から現れても、そのノードがあなたにリクエストを送ってくれるはずですから、
 // そこであなたもそのノードを見つけることができます。
 // もしネットワークが不安定である場合は、requestを複数回呼んでも構いませんし、定期的に呼ぶようにしても問題ありません。
 search.request();
-// requestにグループ名を指定すると、特定のグループに含まれるノードのみを検索することができます。
+// requestの引数にグループ名を指定すると、特定のグループに含まれるノードのみを検索することができます。
 // 自分が所属していないグループのノードも検索可能です。
 // search.request("awesomegroup");
 ```
