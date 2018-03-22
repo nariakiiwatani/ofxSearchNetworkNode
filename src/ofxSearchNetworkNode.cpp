@@ -305,7 +305,7 @@ void ofxSearchNetworkNode::sendBundle(const string &ip, ofxOscBundle bundle) {
 	sender.setup(ip, port_);
 	sender.sendBundle(bundle);
 }
-void ofxSearchNetworkNode::sendMessage(ofxOscBundle bundle) {
+void ofxSearchNetworkNode::sendBundle(ofxOscBundle bundle) {
 	for_each(begin(known_nodes_), end(known_nodes_), [this,&bundle](const pair<string,Node> &p) {
 		sendBundle(p.first, bundle);
 	});

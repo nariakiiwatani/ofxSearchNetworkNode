@@ -30,7 +30,7 @@ public:
 	void sendMessage(const string &ip, ofxOscMessage msg);
 	void sendMessage(ofxOscMessage msg);
 	void sendBundle(const string &ip, ofxOscBundle bundle);
-	void sendMessage(ofxOscBundle bundle);
+	void sendBundle(ofxOscBundle bundle);
 	
 	void setTargetIp(const std::string &ip) { target_ip_ = ofSplitString(ip,",",true); }
 	void setAllowLoopback(bool allow) { allow_loopback_ = allow; }
