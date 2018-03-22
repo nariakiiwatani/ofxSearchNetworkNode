@@ -45,15 +45,30 @@ ofxSearchNetworkNode::~ofxSearchNetworkNode()
 }
 void ofxSearchNetworkNode::setup(int port, const std::string &name, const std::string &group)
 {
-	name_ = name==""?NetworkUtils::getHostName():name;
 	port_ = port;
 	receiver_.setup(port);
-	addToGroup(group);
+	setName(name==""?NetworkUtils::getHostName():name);
+	setGroup(group);
 }
 void ofxSearchNetworkNode::addToGroup(const std::string &group)
 {
-	auto new_groups = ofSplitString(group, ",", true);
+	auto new_groups = ofSplitString(group, ",", false);
 	group_.insert(end(group_), begin(new_groups), end(new_groups));
+}
+
+void ofxSearchNetworkNode::setName(const std::string &name)
+{
+	name_ = name;
+}
+
+void ofxSearchNetworkNode::setGroup(const std::string &group, bool refresh)
+{
+	group_.clear();
+	addToGroup(group);
+	if(refresh) {
+		disconnect();
+		request();
+	}
 }
 
 void ofxSearchNetworkNode::request(const std::string &group)

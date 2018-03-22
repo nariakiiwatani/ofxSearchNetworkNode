@@ -22,6 +22,22 @@ public:
 	ofxSearchNetworkNode();
 	virtual ~ofxSearchNetworkNode();
 	void setup(int port, const std::string &name="", const std::string &group="");
+	void setName(const std::string &name);
+	void setGroup(const std::string &group, bool refresh=true);
+	const std::string& getName() const { return name_; }
+	const std::string& getGroup() const { return ofJoinString(group_,","); }
+	
+	void sendMessage(const string &ip, ofxOscMessage msg) {
+		ofxOscSender sender;
+		sender.setup(ip, port_);
+		sender.sendMessage(msg);
+	}
+	void sendMessage(ofxOscMessage msg) {
+		for_each(begin(known_nodes_), end(known_nodes_), [this,&msg](const pair<string,Node> &p) {
+			sendMessage(p.first, msg);
+		});
+	}
+	
 	void setTargetIp(const std::string &ip) { target_ip_ = ofSplitString(ip,",",true); }
 	void setAllowLoopback(bool allow) { allow_loopback_ = allow; }
 	void setPrefix(const std::string &prefix) { prefix_ = prefix; }
@@ -73,16 +89,6 @@ private:
 	void lostNode(const std::string &ip);
 	void reconnectNode(const std::string &ip);
 	void messageReceived(ofxOscMessage &msg);
-	void sendMessage(const string &ip, ofxOscMessage msg) {
-		ofxOscSender sender;
-		sender.setup(ip, port_);
-		sender.sendMessage(msg);
-	}
-	void sendMessage(ofxOscMessage msg) {
-		for_each(begin(known_nodes_), end(known_nodes_), [this,&msg](const pair<string,Node> &p) {
-			sendMessage(p.first, msg);
-		});
-	}
 	
 	using HashType = std::uint32_t;
 	HashType makeHash(const std::string &self_ip) const;
