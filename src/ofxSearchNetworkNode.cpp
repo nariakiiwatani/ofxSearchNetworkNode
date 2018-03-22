@@ -289,6 +289,28 @@ void ofxSearchNetworkNode::disconnect()
 	flush();
 }
 
+void ofxSearchNetworkNode::sendMessage(const string &ip, ofxOscMessage msg) {
+	ofxOscSender sender;
+	sender.setup(ip, port_);
+	sender.sendMessage(msg);
+}
+void ofxSearchNetworkNode::sendMessage(ofxOscMessage msg) {
+	for_each(begin(known_nodes_), end(known_nodes_), [this,&msg](const pair<string,Node> &p) {
+		sendMessage(p.first, msg);
+	});
+}
+
+void ofxSearchNetworkNode::sendBundle(const string &ip, ofxOscBundle bundle) {
+	ofxOscSender sender;
+	sender.setup(ip, port_);
+	sender.sendBundle(bundle);
+}
+void ofxSearchNetworkNode::sendMessage(ofxOscBundle bundle) {
+	for_each(begin(known_nodes_), end(known_nodes_), [this,&bundle](const pair<string,Node> &p) {
+		sendBundle(p.first, bundle);
+	});
+}
+
 namespace {
 	uint32_t crc_table[256];
 	bool crc_table_created=false;
