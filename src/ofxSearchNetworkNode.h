@@ -27,16 +27,10 @@ public:
 	const std::string& getName() const { return name_; }
 	std::string getGroup() const { return ofJoinString(group_,","); }
 	
-	void sendMessage(const string &ip, ofxOscMessage msg) {
-		ofxOscSender sender;
-		sender.setup(ip, port_);
-		sender.sendMessage(msg);
-	}
-	void sendMessage(ofxOscMessage msg) {
-		for_each(begin(known_nodes_), end(known_nodes_), [this,&msg](const pair<string,Node> &p) {
-			sendMessage(p.first, msg);
-		});
-	}
+	void sendMessage(const string &ip, ofxOscMessage msg);
+	void sendMessage(ofxOscMessage msg);
+	void sendBundle(const string &ip, ofxOscBundle bundle);
+	void sendMessage(ofxOscBundle bundle);
 	
 	void setTargetIp(const std::string &ip) { target_ip_ = ofSplitString(ip,",",true); }
 	void setAllowLoopback(bool allow) { allow_loopback_ = allow; }
