@@ -48,7 +48,7 @@ void ofxSearchNetworkNode::setup(int port, const std::string &name, const std::s
 	port_ = port;
 	receiver_.setup(port);
 	setName(name==""?NetworkUtils::getHostName():name);
-	setGroup(group);
+	setGroup(group, false);
 }
 void ofxSearchNetworkNode::addToGroup(const std::string &group)
 {
