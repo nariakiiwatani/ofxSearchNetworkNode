@@ -25,7 +25,7 @@ public:
 	void setName(const std::string &name);
 	void setGroup(const std::string &group, bool refresh=true);
 	const std::string& getName() const { return name_; }
-	const std::string& getGroup() const { return ofJoinString(group_,","); }
+	std::string getGroup() const { return ofJoinString(group_,","); }
 	
 	void sendMessage(const string &ip, ofxOscMessage msg) {
 		ofxOscSender sender;

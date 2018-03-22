@@ -147,10 +147,11 @@ void ofxSearchNetworkNode::registerNode(const std::string &ip, const std::string
 }
 void ofxSearchNetworkNode::unregisterNode(const std::string &ip, const Node &n)
 {
+	Node cache = n;
 	known_nodes_.erase(ip);
 	heartbeat_send_.erase(ip);
 	heartbeat_recv_.erase(ip);
-	ofNotifyEvent(nodeDisconnected, make_pair(ip,n));
+	ofNotifyEvent(nodeDisconnected, make_pair(ip,cache));
 }
 void ofxSearchNetworkNode::lostNode(const std::string &ip)
 {
