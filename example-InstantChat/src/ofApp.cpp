@@ -5,6 +5,7 @@ void ofApp::setup(){
 	ofAddListener(node_.unhandledMessageReceived, this, &ofApp::messageReceived);
 	node_.setAllowLoopback(true);
 	node_.setup(9000);
+	node_.request();
 	
 	gui_.setup();
 }
