@@ -193,7 +193,7 @@ void ofApp::messageReceived(ofxOscMessage &msg)
 		auto size = data.size();
 		assert(position+size <= info.buffer.size());
 		memcpy(ptr+position, data.getData(), size);
-		info.received_size += size;
+		info.received_size = position+size;
 	}
 }
 
