@@ -175,9 +175,7 @@ void ofApp::newNodeFound(const std::pair<std::string, ofxSearchNetworkNode::Node
 ofVec3f ofApp::getCurrentWorldPosition()
 {
 	float z = camera_.worldToScreen(camera_.getTarget().getGlobalPosition()).z;
-	ofVec3f ret = camera_.screenToWorld(ofVec3f(ofGetMouseX(), ofGetMouseY(), z));
-	cout << ret.z << endl;
-	return ret;
+	return camera_.screenToWorld(ofVec3f(ofGetMouseX(), ofGetMouseY(), z));
 }
 
 //--------------------------------------------------------------
