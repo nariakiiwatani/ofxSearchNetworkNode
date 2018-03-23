@@ -33,6 +33,7 @@ void ofApp::draw(){
 				if(ImGui::Begin(name.c_str(), &box_info.is_open)) {
 					if(ImGui::CollapsingHeader("Received Files")) {
 						for(auto &info : box_info.recv_files) {
+							ImGui::PushID(&info);
 							ImGui::Text("%s", info.second.name.c_str()); ImGui::SameLine();
 							if(info.second.isCompleted()) {
 								if(ImGui::Button("save")) {
@@ -56,6 +57,7 @@ void ofApp::draw(){
 									info.second.is_receiving = true;
 								}
 							}
+							ImGui::PopID();
 						}
 					}
 					if(ImGui::CollapsingHeader("Send Files")) {
