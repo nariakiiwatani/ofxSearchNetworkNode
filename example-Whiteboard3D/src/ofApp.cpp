@@ -65,9 +65,9 @@ void ofApp::draw(){
 		if(ImGui::InputText("enter your name", buf, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
 			node_.setName(buf);
 		}
-		strcpy(buf, node_.getGroup().c_str());
+		strcpy(buf, ofJoinString(node_.getGroup(),",").c_str());
 		if(ImGui::InputText("enter board id", buf, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
-			node_.setGroup(buf, false);
+			node_.setGroup(ofSplitString(buf,","), false);
 		}
 		if(ImGui::Button("Enter")) {
 			node_.request();

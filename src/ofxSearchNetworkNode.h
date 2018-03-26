@@ -21,11 +21,12 @@ class ofxSearchNetworkNode
 public:
 	ofxSearchNetworkNode();
 	virtual ~ofxSearchNetworkNode();
-	void setup(int port, const std::string &name="", const std::string &group="");
+	void setup(int port);
 	void setName(const std::string &name);
 	void setGroup(const std::string &group, bool refresh=true);
+	void setGroup(const std::vector<std::string> &group, bool refresh=true);
 	const std::string& getName() const { return name_; }
-	std::string getGroup() const { return ofJoinString(group_,","); }
+	const std::vector<std::string>& getGroup() const { return group_; }
 	
 	void sendMessage(const string &ip, ofxOscMessage msg);
 	void sendMessage(ofxOscMessage msg);
@@ -37,19 +38,21 @@ public:
 	void setPrefix(const std::string &prefix) { prefix_ = prefix; }
 	
 	void addToGroup(const std::string &group);
+	void addToGroup(const vector<std::string> &group);
 	
 	ofEvent<ofxOscMessage> unhandledMessageReceived;
 	
 	struct Node {
 		std::string name;
-		std::string group;
+		std::vector<std::string> group;
 		bool lost;
 		bool isSame(const Node &node) {
 			return this->name==node.name && this->group==node.group;
 		}
 	};
 	
-	void request(const std::string &group="");
+	void request();
+	void request(const std::vector<std::string> &group);
 	void flush();
 	void disconnect();
 	
@@ -78,7 +81,7 @@ public:
 	
 private:
 	void update(ofEventArgs&);
-	void registerNode(const std::string &ip, const std::string &name, const std::string &group, bool heartbeat_required, float heartbeat_interval);
+	void registerNode(const std::string &ip, const std::string &name, const std::vector<std::string> &group, bool heartbeat_required, float heartbeat_interval);
 	void unregisterNode(const std::string &ip, const Node &n);
 	void lostNode(const std::string &ip);
 	void reconnectNode(const std::string &ip);
@@ -87,10 +90,12 @@ private:
 	using HashType = std::uint32_t;
 	HashType makeHash(const std::string &self_ip) const;
 	bool checkHash(HashType hash, const std::string &remote_ip) const;
-	ofxOscMessage createRequestMessage(const std::string &group, HashType key) const;
+	ofxOscMessage createRequestMessage(const std::vector<std::string> &group, HashType key) const;
 	ofxOscMessage createResponseMessage(HashType key) const;
 	ofxOscMessage createDisconnectMessage() const;
 	ofxOscMessage createHeartbeatMessage() const;
+	std::vector<std::string> getGroups(const ofxOscMessage &msg, int &index) const;
+	void setGroupsTo(ofxOscMessage &msg, const std::vector<std::string> &groups) const;
 	
 	std::string name_;
 	std::vector<std::string> group_;

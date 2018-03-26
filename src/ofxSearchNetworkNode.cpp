@@ -22,6 +22,7 @@ ofxSearchNetworkNode::ofxSearchNetworkNode()
 			target_ip_.push_back(ip.broadcast);
 		}
 	});
+	setName(NetworkUtils::getHostName());
 	awake();
 }
 void ofxSearchNetworkNode::sleep()
@@ -43,17 +44,10 @@ ofxSearchNetworkNode::~ofxSearchNetworkNode()
 	disconnect();
 	sleep();
 }
-void ofxSearchNetworkNode::setup(int port, const std::string &name, const std::string &group)
+void ofxSearchNetworkNode::setup(int port)
 {
 	port_ = port;
 	receiver_.setup(port);
-	setName(name==""?NetworkUtils::getHostName():name);
-	setGroup(group, false);
-}
-void ofxSearchNetworkNode::addToGroup(const std::string &group)
-{
-	auto new_groups = ofSplitString(group, ",", false);
-	group_.insert(end(group_), begin(new_groups), end(new_groups));
 }
 
 void ofxSearchNetworkNode::setName(const std::string &name)
@@ -61,7 +55,19 @@ void ofxSearchNetworkNode::setName(const std::string &name)
 	name_ = name;
 }
 
+void ofxSearchNetworkNode::addToGroup(const std::string &group)
+{
+	addToGroup({group});
+}
+void ofxSearchNetworkNode::addToGroup(const std::vector<std::string> &group)
+{
+	group_.insert(end(group_), begin(group), end(group));
+}
 void ofxSearchNetworkNode::setGroup(const std::string &group, bool refresh)
+{
+	setGroup({group});
+}
+void ofxSearchNetworkNode::setGroup(const vector<std::string> &group, bool refresh)
 {
 	group_.clear();
 	addToGroup(group);
@@ -71,10 +77,14 @@ void ofxSearchNetworkNode::setGroup(const std::string &group, bool refresh)
 	}
 }
 
-void ofxSearchNetworkNode::request(const std::string &group)
+void ofxSearchNetworkNode::request()
+{
+	request(group_);
+}
+void ofxSearchNetworkNode::request(const std::vector<std::string> &group)
 {
 	for_each(begin(target_ip_), end(target_ip_), [this,&group](std::string &ip) {
-		sendMessage(ip, createRequestMessage(group==""?ofJoinString(group_,","):group, is_secret_mode_?makeHash(getSelfIp(ip)):0));
+		sendMessage(ip, createRequestMessage(group, is_secret_mode_?makeHash(getSelfIp(ip)):0));
 	});
 }
 void ofxSearchNetworkNode::flush()
@@ -117,7 +127,26 @@ void ofxSearchNetworkNode::update(ofEventArgs&)
 	}
 }
 
-void ofxSearchNetworkNode::registerNode(const std::string &ip, const std::string &name, const std::string &group, bool heartbeat_required, float heartbeat_interval)
+std::vector<std::string> ofxSearchNetworkNode::getGroups(const ofxOscMessage &msg, int &index) const
+{
+	std::vector<string> ret;
+	int count = msg.getArgAsInt32(index++);
+	ret.reserve(count);
+	int last_index = index+count;
+	for(; index < last_index; ++index) {
+		ret.push_back(msg.getArgAsString(index));
+	}
+	return ret;
+}
+void ofxSearchNetworkNode::setGroupsTo(ofxOscMessage &msg, const std::vector<std::string> &groups) const
+{
+	msg.addInt32Arg(groups.size());
+	for(auto &g : groups) {
+		msg.addStringArg(g);
+	}
+}
+
+void ofxSearchNetworkNode::registerNode(const std::string &ip, const std::string &name, const std::vector<std::string> &group, bool heartbeat_required, float heartbeat_interval)
 {
 	Node n{name, group, false};
 	auto result = known_nodes_.insert(make_pair(ip, n));
@@ -193,19 +222,22 @@ void ofxSearchNetworkNode::messageReceived(ofxOscMessage &msg)
 			if(!allow_loopback_ && isSelfIp(ip)) {
 				return;
 			}
-			int32_t secret_key = msg.getArgAsInt32(1);
+			int index = 0;
+			vector<string> groups = getGroups(msg, index);
+			int32_t secret_key = msg.getArgAsInt32(index++);
 			if(secret_key != 0 || is_secret_mode_) {
 				if(!checkHash(secret_key, ip)) {
 					return;
 				}
 			}
-			vector<string> groups = ofSplitString(msg.getArgAsString(0), ",");
-			if(any_of(begin(groups), end(groups), [this](string &group) {
+			if((group_.empty() && groups.empty()) || any_of(begin(groups), end(groups), [this](string &group) {
 				return ofContains(group_, group);
 			})) {
-				registerNode(ip,
-							 msg.getArgAsString(2), msg.getArgAsString(3),
-							 msg.getArgAsBool(4), msg.getArgAsFloat(5));
+				string name = msg.getArgAsString(index++);
+				vector<string> group = getGroups(msg, index);
+				bool heartbeat = msg.getArgAsBool(index++);
+				float heartbeat_interval = msg.getArgAsFloat(index++);
+				registerNode(ip, name, group, heartbeat, heartbeat_interval);
 				sendMessage(ip, createResponseMessage(is_secret_mode_?makeHash(getSelfIp(ip)):0));
 			}
 		}
@@ -217,9 +249,12 @@ void ofxSearchNetworkNode::messageReceived(ofxOscMessage &msg)
 					return;
 				}
 			}
-			registerNode(ip,
-						 msg.getArgAsString(1), msg.getArgAsString(2),
-						 msg.getArgAsBool(3), msg.getArgAsFloat(4));
+			int index = 1;
+			string name = msg.getArgAsString(index++);
+			vector<string> group = getGroups(msg, index);
+			bool heartbeat = msg.getArgAsBool(index++);
+			float heartbeat_interval = msg.getArgAsFloat(index++);
+			registerNode(ip, name, group, heartbeat, heartbeat_interval);
 		}
 		else if(method == "disconnect") {
 			string ip = msg.getRemoteIp();
@@ -248,14 +283,14 @@ void ofxSearchNetworkNode::messageReceived(ofxOscMessage &msg)
 		ofNotifyEvent(unhandledMessageReceived, msg, this);
 	}
 }
-ofxOscMessage ofxSearchNetworkNode::createRequestMessage(const std::string &group, HashType key) const
+ofxOscMessage ofxSearchNetworkNode::createRequestMessage(const std::vector<std::string> &group, HashType key) const
 {
 	ofxOscMessage ret;
 	ret.setAddress(ofJoinString({"",prefix_,"request"},"/"));
-	ret.addStringArg(group);
+	setGroupsTo(ret, group);
 	ret.addInt32Arg(key);
 	ret.addStringArg(name_);
-	ret.addStringArg(ofJoinString(group_,","));
+	setGroupsTo(ret, group_);
 	ret.addBoolArg(need_heartbeat_);
 	ret.addFloatArg(heartbeat_request_interval_);
 	return move(ret);
@@ -266,7 +301,7 @@ ofxOscMessage ofxSearchNetworkNode::createResponseMessage(HashType key) const
 	ret.setAddress(ofJoinString({"",prefix_,"response"},"/"));
 	ret.addInt32Arg(key);
 	ret.addStringArg(name_);
-	ret.addStringArg(ofJoinString(group_,","));
+	setGroupsTo(ret, group_);
 	ret.addBoolArg(need_heartbeat_);
 	ret.addFloatArg(heartbeat_request_interval_);
 	return move(ret);
