@@ -61,11 +61,11 @@ public:
 	void setSleep(bool s) { s?sleep():awake(); }
 	bool isSleep() const { return is_sleep_; }
 	
-	ofEvent<const pair<std::string,Node>> nodeFound;
-	ofEvent<const pair<std::string,Node>> nodePropertyChanged;
-	ofEvent<const pair<std::string,Node>> nodeDisconnected;
-	ofEvent<const pair<std::string,Node>> nodeLost;
-	ofEvent<const pair<std::string,Node>> nodeReconnected;
+	ofEvent<const std::pair<std::string,Node>> nodeFound;
+	ofEvent<const std::pair<std::string,Node>> nodePropertyChanged;
+	ofEvent<const std::pair<std::string,Node>> nodeDisconnected;
+	ofEvent<const std::pair<std::string,Node>> nodeLost;
+	ofEvent<const std::pair<std::string,Node>> nodeReconnected;
 	
 	const std::map<std::string, Node>& getNodes() const { return known_nodes_; }
 	bool isSelfIp(const std::string &ip) const;

@@ -13,15 +13,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include "NetworkUtils.h"
 #include "ofConstants.h"
 
+using namespace std;
+
 #if defined(TARGET_OSX) || defined(TARGET_OF_IOS) || defined(TARGET_LINUX)
 #include <ifaddrs.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <net/if.h>
 
-using namespace std;
-
-std::string NetworkUtils::getHostName()
+string NetworkUtils::getHostName()
 {
 	char buf[256] = {};
 	if(gethostname(buf, 256) != 0) {
@@ -30,7 +30,7 @@ std::string NetworkUtils::getHostName()
 	return buf;
 }
 
-std::vector<NetworkUtils::IPv4Interface> NetworkUtils::getIPv4Interface()
+vector<NetworkUtils::IPv4Interface> NetworkUtils::getIPv4Interface()
 {
 	struct ifaddrs *ifas, *ifa;
 	if(getifaddrs(&ifas) != 0) {
@@ -63,7 +63,7 @@ std::vector<NetworkUtils::IPv4Interface> NetworkUtils::getIPv4Interface()
 	return ret;
 }
 
-bool NetworkUtils::IPv4Interface::isInSameNetwork(const std::string &hint) const
+bool NetworkUtils::IPv4Interface::isInSameNetwork(const string &hint) const
 {
 	return (ip_raw&netmask_raw) == (inet_addr(hint.c_str())&netmask_raw);
 }
@@ -71,7 +71,7 @@ bool NetworkUtils::IPv4Interface::isInSameNetwork(const std::string &hint) const
 #elif defined(TARGET_WIN32)
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
-std::string NetworkUtils::getHostName()
+string NetworkUtils::getHostName()
 {
 	char buf[256] = {};
 	if(gethostname(buf, 256) != 0) {
@@ -80,7 +80,7 @@ std::string NetworkUtils::getHostName()
 	return buf;
 }
 
-std::vector<NetworkUtils::IPv4Interface> NetworkUtils::getIPv4Interface()
+vector<NetworkUtils::IPv4Interface> NetworkUtils::getIPv4Interface()
 {
 	PIP_ADAPTER_ADDRESSES if_info = nullptr;
 	ULONG data_size=0;
@@ -115,12 +115,12 @@ std::vector<NetworkUtils::IPv4Interface> NetworkUtils::getIPv4Interface()
 	}
 	return ret;
 }
-bool NetworkUtils::IPv4Interface::isInSameNetwork(const std::string &hint) const
+bool NetworkUtils::IPv4Interface::isInSameNetwork(const string &hint) const
 {
 	return (ip_raw&netmask_raw) == (inet_addr(hint.c_str())&netmask_raw);
 }
 #else
-std::string NetworkUtils::getHostName(){ return ""; }
-std::vector<NetworkUtils::IPv4Interface> NetworkUtils::getIPv4Interface() { return {}; }
-bool NetworkUtils::IPv4Interface::isInSameNetwork(const std::string &hint) const { return false; }
+string NetworkUtils::getHostName(){ return ""; }
+vector<NetworkUtils::IPv4Interface> NetworkUtils::getIPv4Interface() { return {}; }
+bool NetworkUtils::IPv4Interface::isInSameNetwork(const string &hint) const { return false; }
 #endif

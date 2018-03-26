@@ -12,6 +12,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include "ofxSearchNetworkNode.h"
 
+using namespace std;
+
 ofxSearchNetworkNode::ofxSearchNetworkNode()
 :prefix_("ofxSearchNetworkNode")
 ,is_sleep_(true)
@@ -50,24 +52,24 @@ void ofxSearchNetworkNode::setup(int port)
 	receiver_.setup(port);
 }
 
-void ofxSearchNetworkNode::setName(const std::string &name)
+void ofxSearchNetworkNode::setName(const string &name)
 {
 	name_ = name;
 }
 
-void ofxSearchNetworkNode::addToGroup(const std::string &group)
+void ofxSearchNetworkNode::addToGroup(const string &group)
 {
 	addToGroup({group});
 }
-void ofxSearchNetworkNode::addToGroup(const std::vector<std::string> &group)
+void ofxSearchNetworkNode::addToGroup(const vector<string> &group)
 {
 	group_.insert(end(group_), begin(group), end(group));
 }
-void ofxSearchNetworkNode::setGroup(const std::string &group, bool refresh)
+void ofxSearchNetworkNode::setGroup(const string &group, bool refresh)
 {
 	setGroup({group});
 }
-void ofxSearchNetworkNode::setGroup(const vector<std::string> &group, bool refresh)
+void ofxSearchNetworkNode::setGroup(const vector<string> &group, bool refresh)
 {
 	group_.clear();
 	addToGroup(group);
@@ -81,9 +83,9 @@ void ofxSearchNetworkNode::request()
 {
 	request(group_);
 }
-void ofxSearchNetworkNode::request(const std::vector<std::string> &group)
+void ofxSearchNetworkNode::request(const vector<string> &group)
 {
-	for_each(begin(target_ip_), end(target_ip_), [this,&group](std::string &ip) {
+	for_each(begin(target_ip_), end(target_ip_), [this,&group](string &ip) {
 		sendMessage(ip, createRequestMessage(group, is_secret_mode_?makeHash(getSelfIp(ip)):0));
 	});
 }
@@ -93,7 +95,7 @@ void ofxSearchNetworkNode::flush()
 	heartbeat_send_.clear();
 	heartbeat_recv_.clear();
 }
-void ofxSearchNetworkNode::enableSecretMode(const std::string &key)
+void ofxSearchNetworkNode::enableSecretMode(const string &key)
 {
 	is_secret_mode_ = true;
 	secret_key_ = key;
@@ -127,9 +129,9 @@ void ofxSearchNetworkNode::update(ofEventArgs&)
 	}
 }
 
-std::vector<std::string> ofxSearchNetworkNode::getGroups(const ofxOscMessage &msg, int &index) const
+vector<string> ofxSearchNetworkNode::getGroups(const ofxOscMessage &msg, int &index) const
 {
-	std::vector<string> ret;
+	vector<string> ret;
 	int count = msg.getArgAsInt32(index++);
 	ret.reserve(count);
 	int last_index = index+count;
@@ -138,7 +140,7 @@ std::vector<std::string> ofxSearchNetworkNode::getGroups(const ofxOscMessage &ms
 	}
 	return ret;
 }
-void ofxSearchNetworkNode::setGroupsTo(ofxOscMessage &msg, const std::vector<std::string> &groups) const
+void ofxSearchNetworkNode::setGroupsTo(ofxOscMessage &msg, const vector<string> &groups) const
 {
 	msg.addInt32Arg(groups.size());
 	for(auto &g : groups) {
@@ -146,7 +148,7 @@ void ofxSearchNetworkNode::setGroupsTo(ofxOscMessage &msg, const std::vector<std
 	}
 }
 
-void ofxSearchNetworkNode::registerNode(const std::string &ip, const std::string &name, const std::vector<std::string> &group, bool heartbeat_required, float heartbeat_interval)
+void ofxSearchNetworkNode::registerNode(const string &ip, const string &name, const vector<string> &group, bool heartbeat_required, float heartbeat_interval)
 {
 	Node n{name, group, false};
 	auto result = known_nodes_.insert(make_pair(ip, n));
@@ -174,7 +176,7 @@ void ofxSearchNetworkNode::registerNode(const std::string &ip, const std::string
 		sendMessage(ip, createHeartbeatMessage());
 	}
 }
-void ofxSearchNetworkNode::unregisterNode(const std::string &ip, const Node &n)
+void ofxSearchNetworkNode::unregisterNode(const string &ip, const Node &n)
 {
 	Node cache = n;
 	known_nodes_.erase(ip);
@@ -182,7 +184,7 @@ void ofxSearchNetworkNode::unregisterNode(const std::string &ip, const Node &n)
 	heartbeat_recv_.erase(ip);
 	ofNotifyEvent(nodeDisconnected, make_pair(ip,cache));
 }
-void ofxSearchNetworkNode::lostNode(const std::string &ip)
+void ofxSearchNetworkNode::lostNode(const string &ip)
 {
 	auto it = known_nodes_.find(ip);
 	if(it != end(known_nodes_) && !it->second.lost) {
@@ -190,7 +192,7 @@ void ofxSearchNetworkNode::lostNode(const std::string &ip)
 		ofNotifyEvent(nodeLost, *it);
 	}
 }
-void ofxSearchNetworkNode::reconnectNode(const std::string &ip)
+void ofxSearchNetworkNode::reconnectNode(const string &ip)
 {
 	auto it = known_nodes_.find(ip);
 	if(it != end(known_nodes_) && !it->second.lost) {
@@ -199,11 +201,11 @@ void ofxSearchNetworkNode::reconnectNode(const std::string &ip)
 	}
 }
 
-bool ofxSearchNetworkNode::isSelfIp(const std::string &ip) const
+bool ofxSearchNetworkNode::isSelfIp(const string &ip) const
 {
 	return any_of(begin(self_ip_), end(self_ip_), [&ip](const NetworkUtils::IPv4Interface &me){return ip==me.ip;});
 }
-std::string ofxSearchNetworkNode::getSelfIp(const std::string &an_ip_in_same_netwotk)
+string ofxSearchNetworkNode::getSelfIp(const string &an_ip_in_same_netwotk)
 {
 	auto it = find_if(begin(self_ip_), end(self_ip_), [&an_ip_in_same_netwotk](NetworkUtils::IPv4Interface &me) {
 		return me.isInSameNetwork(an_ip_in_same_netwotk);
@@ -283,7 +285,7 @@ void ofxSearchNetworkNode::messageReceived(ofxOscMessage &msg)
 		ofNotifyEvent(unhandledMessageReceived, msg, this);
 	}
 }
-ofxOscMessage ofxSearchNetworkNode::createRequestMessage(const std::vector<std::string> &group, HashType key) const
+ofxOscMessage ofxSearchNetworkNode::createRequestMessage(const vector<string> &group, HashType key) const
 {
 	ofxOscMessage ret;
 	ret.setAddress(ofJoinString({"",prefix_,"request"},"/"));
