@@ -7,7 +7,7 @@ void ofApp::setup(){
 	node_.setup(9000);
 	node_.request();
 	
-//	gui_.setup();
+	gui_.setup();
 	
 	ofBackground(ofColor::black);
 	
@@ -60,7 +60,6 @@ void ofApp::draw(){
 	waveform_.draw();
 	ofPopStyle();
 	
-	/*
 	gui_.begin();
 	
 	if(ImGui::Begin("Settings")) {
@@ -96,7 +95,6 @@ void ofApp::draw(){
 	ImGui::End();
 	
 	gui_.end();
-	 */
 }
 
 void ofApp::messageReceived(ofxOscMessage &msg)
