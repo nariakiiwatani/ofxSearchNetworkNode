@@ -2,14 +2,14 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-	ofAddListener(node_.unhandledMessageReceived, this, &ofApp::messageReceived);
 	node_.setAllowLoopback(true);
 	node_.setup(9000);
 	node_.request();
 	
 	gui_.setup();
 	
-	my_value_.addListener(this, &ofApp::myValueEdited);
+	my_value_.setNode(node_);
+	my_value_.setup(10000, "my value");
 }
 
 //--------------------------------------------------------------
@@ -37,7 +37,7 @@ void ofApp::draw(){
 		if(ImGui::Button("Leave")) {
 			node_.disconnect();
 		}
-		float value = my_value_;
+		float value = my_value_.get();
 		if(ImGui::SliderFloat("my value", &value, 0, 1)) {
 			my_value_.set(value);
 		}
@@ -49,7 +49,7 @@ void ofApp::draw(){
 		if(ImGui::TreeNode("Members", "Members(%lu)", members.size())) {
 			for(const auto &member : members) {
 				ImGui::Text("%s(%s)", member.second.name.c_str(), member.first.c_str());
-				ImGui::SliderFloat("value", &remote_values_[member.first], 0, 1);
+				ImGui::SliderFloat("value", &my_value_.getRemote(member.first), 0, 1);
 			}
 			ImGui::TreePop();
 		}
@@ -57,19 +57,6 @@ void ofApp::draw(){
 	ImGui::End();
 	
 	gui_.end();
-}
-
-void ofApp::messageReceived(ofxOscMessage &msg)
-{
-	remote_values_[msg.getRemoteIp()] = msg.getArgAsFloat(0);
-}
-
-void ofApp::myValueEdited(float &value)
-{
-	ofxOscMessage msg;
-	msg.setAddress("/value/set");
-	msg.addFloatArg(value);
-	node_.sendMessage(msg);
 }
 
 

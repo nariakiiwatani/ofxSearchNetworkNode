@@ -2,6 +2,7 @@
 
 #include "ofMain.h"
 #include "ofxSearchNetworkNode.h"
+#include "ofxSNNParamSync.h"
 #include "ofxImGui.h"
 
 class ofApp : public ofBaseApp{
@@ -25,9 +26,5 @@ public:
 private:
 	ofxSearchNetworkNode node_;
 	ofxImGui::Gui gui_;
-	ofParameter<float> my_value_;
-	std::map<std::string, float> remote_values_;
-	
-	void messageReceived(ofxOscMessage &msg);
-	void myValueEdited(float &value);
+	ofxSNNParamSync<float> my_value_;
 };

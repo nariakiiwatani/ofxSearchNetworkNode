@@ -1,3 +1,4 @@
 ofxImGui
 ofxOsc
+ofxPubSubOsc
 ofxSearchNetworkNode
