@@ -37,11 +37,10 @@ search.enableSecretMode("secret_key");
 
 // setup your node with a port and a name
 search.setup(8000);
-// with second argument, you can set a name of this node. default is hostname of the machine.
-// with third argument, you can set groups to belong to.
+// with setName, you can set a name of this node. default is hostname of the machine.
+// with setGroup, you can set groups to belong to.
 // you can set multipul groups by comma separated string.
 // nodes in different group won't be shown each other.
-// search.setup(8000, "my node", "class1,class2");
 
 // broadcast a request message to search nodes.
 // it's enough to send request once (usually at startup).

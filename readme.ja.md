@@ -38,13 +38,11 @@ search.setRequestHeartbeat(false);
 search.enableSecretMode("secret_key");
 // search.disableSecretMode();
 
-// 上述の設定が終わったら、ポート名とノード名を指定してsetupします。
+// 上述の設定が終わったら、ポート名を指定してsetupします。
 search.setup(8000);
-// 2番目の引数でこのノードの名前を設定できます。指定しない場合はマシンのホスト名が使われます。
-// 3番目の引数でグループを設定できます。カンマ区切りで複数指定することもできます。
+// setNameでこのノードの名前を設定できます。指定しない場合はマシンのホスト名が使われます。
+// setGroupでグループを設定できます。カンマ区切りで複数指定することもできます。
 // 所属するグループが違うノード同士は互いに検索されません。
-// search.setup(8000, "my node", "class1,class2");
-
 
 // broadcast a request message to search nodes.
 // it's enough to send request once (usually at startup).
