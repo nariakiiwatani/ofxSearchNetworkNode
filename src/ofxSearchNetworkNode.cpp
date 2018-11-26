@@ -221,7 +221,7 @@ void ofxSearchNetworkNode::messageReceived(ofxOscMessage &msg)
 	if(address.size() >= 2 && address[0] == "" && address[1] == prefix_) {
 		const string &method = address.size()>=3?address[2]:"";
 		if(method == "request") {
-			string ip = msg.getRemoteIp();
+			string ip = msg.getRemoteHost();
 			if(!allow_loopback_ && isSelfIp(ip)) {
 				return;
 			}
@@ -245,7 +245,7 @@ void ofxSearchNetworkNode::messageReceived(ofxOscMessage &msg)
 			}
 		}
 		else if(method == "response") {
-			string ip = msg.getRemoteIp();
+			string ip = msg.getRemoteHost();
 			int32_t secret_key = msg.getArgAsInt32(0);
 			if(secret_key != 0 || is_secret_mode_) {
 				if(!checkHash(secret_key, ip)) {
@@ -260,7 +260,7 @@ void ofxSearchNetworkNode::messageReceived(ofxOscMessage &msg)
 			registerNode(ip, name, group, heartbeat, heartbeat_interval);
 		}
 		else if(method == "disconnect") {
-			string ip = msg.getRemoteIp();
+			string ip = msg.getRemoteHost();
 			auto it = known_nodes_.find(ip);
 			if(it == end(known_nodes_)) {
 				ofLogWarning("received disconnected message from unknown node : " + ip);
@@ -269,7 +269,7 @@ void ofxSearchNetworkNode::messageReceived(ofxOscMessage &msg)
 			unregisterNode(ip, it->second);
 		}
 		else if(method == "heartbeat") {
-			string ip = msg.getRemoteIp();
+			string ip = msg.getRemoteHost();
 			auto it = heartbeat_recv_.find(ip);
 			if(it == end(heartbeat_recv_)) {
 				ofLogWarning("received heartbeat message from unknown node : " + ip);

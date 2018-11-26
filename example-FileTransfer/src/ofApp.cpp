@@ -146,14 +146,14 @@ void ofApp::messageReceived(ofxOscMessage &msg)
 {
 	const std::string &address = msg.getAddress();
 	if(address == "/file/info") {
-		const std::string &ip = msg.getRemoteIp();
+		const std::string &ip = msg.getRemoteHost();
 		auto &box = boxes_[ip];
 		RecvFile file(msg.getArgAsString(2), msg.getArgAsInt64(1));
 		auto identifier = msg.getArgAsInt32(0);
 		box.recv_files.insert(std::make_pair(identifier, file));
 	}
 	else if(address == "/file/request"){
-		std::string ip = msg.getRemoteIp();
+		std::string ip = msg.getRemoteHost();
 		auto it = boxes_.find(ip);
 		if(it == end(boxes_)) { return; }
 		auto &send_files = it->second.send_files;
@@ -178,7 +178,7 @@ void ofApp::messageReceived(ofxOscMessage &msg)
 		node_.sendMessage(info.destination, msg);
 	}
 	else if(address == "/file/data") {
-		std::string ip = msg.getRemoteIp();
+		std::string ip = msg.getRemoteHost();
 		uint32_t identifier = msg.getArgAsInt32(0);
 		uint64_t position = msg.getArgAsInt64(1);
 		const ofBuffer &data = msg.getArgAsBlob(2);
