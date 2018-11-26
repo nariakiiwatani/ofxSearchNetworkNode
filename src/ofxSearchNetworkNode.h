@@ -28,9 +28,9 @@ public:
 	const std::string& getName() const { return name_; }
 	const std::vector<std::string>& getGroup() const { return group_; }
 	
-	void sendMessage(const string &ip, ofxOscMessage msg);
+	void sendMessage(const std::string &ip, ofxOscMessage msg);
 	void sendMessage(ofxOscMessage msg);
-	void sendBundle(const string &ip, ofxOscBundle bundle);
+	void sendBundle(const std::string &ip, ofxOscBundle bundle);
 	void sendBundle(ofxOscBundle bundle);
 	
 	void setTargetIp(const std::string &ip) { target_ip_ = ofSplitString(ip,",",true); }
@@ -38,7 +38,7 @@ public:
 	void setPrefix(const std::string &prefix) { prefix_ = prefix; }
 	
 	void addToGroup(const std::string &group);
-	void addToGroup(const vector<std::string> &group);
+	void addToGroup(const std::vector<std::string> &group);
 	
 	ofEvent<ofxOscMessage> unhandledMessageReceived;
 	

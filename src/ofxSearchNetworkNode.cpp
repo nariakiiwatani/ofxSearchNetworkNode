@@ -11,6 +11,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 */
 
 #include "ofxSearchNetworkNode.h"
+#include "ofAppRunner.h"
 
 using namespace std;
 

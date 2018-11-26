@@ -71,6 +71,7 @@ bool NetworkUtils::IPv4Interface::isInSameNetwork(const string &hint) const
 #elif defined(TARGET_WIN32)
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
+#pragma comment(lib, "Iphlpapi.lib")
 string NetworkUtils::getHostName()
 {
 	char buf[256] = {};
