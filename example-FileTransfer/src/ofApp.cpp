@@ -9,6 +9,9 @@ void ofApp::setup(){
 	node_.setup(9000);
 	node_.request();
 	
+	SEND_MAXSIZE = 
+	RECV_MAXSIZE = osc::UdpSocket::GetUdpBufferSize() - 128;
+
 	gui_.setup();
 }
 

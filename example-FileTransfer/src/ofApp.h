@@ -55,6 +55,6 @@ private:
 	
 	std::vector<std::string> drag_files_;
 	
-	const uint64_t SEND_MAXSIZE = 32000;
-	const uint64_t RECV_MAXSIZE = 32000;
+	uint64_t SEND_MAXSIZE;
+	uint64_t RECV_MAXSIZE;
 };
