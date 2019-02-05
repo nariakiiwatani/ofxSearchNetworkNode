@@ -30,6 +30,7 @@ void ofApp::draw(){
 			const auto &ip = member.first;
 			const auto &name = member.second.name;
 			auto &box_info = boxes_[ip];
+			ImGui::PushID(ip.c_str());
 			ImGui::Checkbox(name.c_str(), &box_info.is_open); ImGui::SameLine();
 			ImGui::Text("(%s)", ip.c_str());
 			if(box_info.is_open) {
@@ -81,6 +82,7 @@ void ofApp::draw(){
 				}
 				ImGui::End();
 			}
+			ImGui::PopID();
 		}
 	}
 	ImGui::End();
