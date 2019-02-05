@@ -27,6 +27,9 @@ void ofApp::draw(){
 	if(ImGui::Begin("Hosts")) {
 		const auto &members = node_.getNodes();
 		for(const auto &member : members) {
+			if(member.second.lost) {
+				continue;
+			}
 			const auto &ip = member.first;
 			const auto &name = member.second.name;
 			auto &box_info = boxes_[ip];
