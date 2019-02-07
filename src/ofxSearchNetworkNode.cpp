@@ -196,7 +196,7 @@ void ofxSearchNetworkNode::lostNode(const string &ip)
 void ofxSearchNetworkNode::reconnectNode(const string &ip)
 {
 	auto it = known_nodes_.find(ip);
-	if(it != end(known_nodes_) && !it->second.lost) {
+	if(it != end(known_nodes_) && it->second.lost) {
 		it->second.lost = false;
 		ofNotifyEvent(nodeReconnected, *it);
 	}
