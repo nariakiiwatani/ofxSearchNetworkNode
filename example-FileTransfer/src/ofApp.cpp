@@ -9,6 +9,9 @@ void ofApp::setup(){
 	node_.setup(9000);
 	node_.request();
 	
+	SEND_MAXSIZE = 
+	RECV_MAXSIZE = osc::UdpSocket::GetUdpBufferSize() - 128;
+
 	gui_.setup();
 }
 
@@ -24,9 +27,13 @@ void ofApp::draw(){
 	if(ImGui::Begin("Hosts")) {
 		const auto &members = node_.getNodes();
 		for(const auto &member : members) {
+			if(member.second.lost) {
+				continue;
+			}
 			const auto &ip = member.first;
 			const auto &name = member.second.name;
 			auto &box_info = boxes_[ip];
+			ImGui::PushID(ip.c_str());
 			ImGui::Checkbox(name.c_str(), &box_info.is_open); ImGui::SameLine();
 			ImGui::Text("(%s)", ip.c_str());
 			if(box_info.is_open) {
@@ -36,6 +43,10 @@ void ofApp::draw(){
 							ImGui::PushID(&info);
 							ImGui::Text("%s", info.second.name.c_str()); ImGui::SameLine();
 							if(info.second.isCompleted()) {
+								if(!info.second.complete_msg_sent) {
+									sendCompleted(ip, info.first);
+									info.second.complete_msg_sent = true;
+								}
 								if(ImGui::Button("save")) {
 									auto result = ofSystemSaveDialog(info.second.name, "");
 									if(result.bSuccess) {
@@ -55,29 +66,43 @@ void ofApp::draw(){
 							else {
 								if(ImGui::Button("download")) {
 									info.second.is_receiving = true;
+									info.second.complete_msg_sent = false;
 								}
 							}
 							ImGui::PopID();
 						}
 					}
 					if(ImGui::CollapsingHeader("Send Files")) {
-						for(auto &info : box_info.send_files) {
-							ImGui::Text("%s", info.second.file.path().c_str());
+						for(auto it = std::begin(box_info.send_files); it != std::end(box_info.send_files);) {
+							bool rem = false;
+							auto &info = it->second;
+							if(ImGui::Button("resend")) {
+								notifyFileIsReady(ip, info.path);
+							} ImGui::SameLine();
+							if(ImGui::Button("abort")) {
+								rem = true;
+								sendAborted(ip, it->first);
+							} ImGui::SameLine();
+							ImGui::Text("%s(%s)", ofFilePath::getFileName(info.path).c_str(), info.path.c_str());
+							if(rem) {
+								it = box_info.send_files.erase(it);
+							}
+							else {
+								++it;
+							}
 						}
 					}
 					if(ImGui::IsWindowHovered()) {
 						if(!drag_files_.empty()) {
 							for(auto &path : drag_files_) {
-								ofFile file(path);
-								if(file.isFile()) {
-									notifyFileIsReady(ip, path);
-								}
+								notifyFileIsReady(ip, path);
 							}
 						}
 					}
 				}
 				ImGui::End();
 			}
+			ImGui::PopID();
 		}
 	}
 	ImGui::End();
@@ -116,7 +141,8 @@ namespace {
 void ofApp::notifyFileIsReady(const std::string &ip, const std::string &filepath)
 {
 	SendFile info(ip, filepath);
-	if(!info.file.exists()) {
+	ofFile file(filepath);
+	if(!file.exists()) {
 		return;
 	}
 	auto it = boxes_.find(ip);
@@ -127,7 +153,7 @@ void ofApp::notifyFileIsReady(const std::string &ip, const std::string &filepath
 	ofxOscMessage msg;
 	msg.setAddress("/file/info");
 	msg.addInt32Arg(hash);
-	msg.addInt64Arg(info.file.getSize());
+	msg.addInt64Arg(file.getSize());
 	msg.addStringArg(ofFilePath::getFileName(filepath));
 	node_.sendMessage(ip, msg);
 }
@@ -142,6 +168,21 @@ void ofApp::sendRequest(const std::string &ip, unsigned int identifier, uint64_t
 	node_.sendMessage(ip, msg);
 }
 
+void ofApp::sendAborted(const std::string &ip, unsigned int identifier)
+{
+	ofxOscMessage msg;
+	msg.setAddress("/file/aborted");
+	msg.addInt32Arg(identifier);
+	node_.sendMessage(ip, msg);
+}
+void ofApp::sendCompleted(const std::string &ip, unsigned int identifier)
+{
+	ofxOscMessage msg;
+	msg.setAddress("/file/completed");
+	msg.addInt32Arg(identifier);
+	node_.sendMessage(ip, msg);
+}
+
 void ofApp::messageReceived(ofxOscMessage &msg)
 {
 	const std::string &address = msg.getAddress();
@@ -150,7 +191,10 @@ void ofApp::messageReceived(ofxOscMessage &msg)
 		auto &box = boxes_[ip];
 		RecvFile file(msg.getArgAsString(2), msg.getArgAsInt64(1));
 		auto identifier = msg.getArgAsInt32(0);
-		box.recv_files.insert(std::make_pair(identifier, file));
+		auto result = box.recv_files.insert(std::make_pair(identifier, file));
+		if(!result.second) {
+			result.first->second = file;
+		}
 	}
 	else if(address == "/file/request"){
 		std::string ip = msg.getRemoteHost();
@@ -163,6 +207,9 @@ void ofApp::messageReceived(ofxOscMessage &msg)
 			return;
 		}
 		auto &info = it2->second;
+		if(!info.isOpen()) {
+			info.open();
+		}
 		uint64_t position = msg.getArgAsInt64(1);
 		uint64_t maxsize = min<uint64_t>(msg.getArgAsInt64(2), SEND_MAXSIZE);
 		uint64_t size = min<uint64_t>(maxsize, info.file.getSize()-position);
@@ -176,6 +223,15 @@ void ofApp::messageReceived(ofxOscMessage &msg)
 		msg.addInt64Arg(position);
 		msg.addBlobArg(buffer);
 		node_.sendMessage(info.destination, msg);
+	}
+	else if(address == "/file/aborted") {
+		std::string ip = msg.getRemoteIp();
+		uint32_t identifier = msg.getArgAsInt32(0);
+		auto it = boxes_.find(ip);
+		if(it == end(boxes_)) { return; }
+		auto it2 = it->second.recv_files.find(identifier);
+		if(it2 == end(it->second.recv_files)) { return; }
+		it->second.recv_files.erase(it2);
 	}
 	else if(address == "/file/data") {
 		std::string ip = msg.getRemoteHost();
@@ -195,8 +251,20 @@ void ofApp::messageReceived(ofxOscMessage &msg)
 		memcpy(ptr+position, data.getData(), size);
 		info.received_size = position+size;
 	}
+	else if(address == "/file/completed") {
+		std::string ip = msg.getRemoteIp();
+		auto it = boxes_.find(ip);
+		if(it == end(boxes_)) { return; }
+		auto &send_files = it->second.send_files;
+		uint32_t identifier = msg.getArgAsInt32(0);
+		auto it2 = send_files.find(identifier);
+		if(it2 == end(send_files)) {
+			return;
+		}
+		auto &info = it2->second;
+		info.close();
+	}
 }
-
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
 	

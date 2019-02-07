@@ -28,10 +28,13 @@ private:
 	void messageReceived(ofxOscMessage &msg);
 	void notifyFileIsReady(const std::string &ip, const std::string &filepath);
 	void sendRequest(const std::string &ip, unsigned int identifier, uint64_t position);
-	
+	void sendAborted(const std::string &ip, unsigned int identifier);
+	void sendCompleted(const std::string &ip, unsigned int identifier);
+
 	struct RecvFile {
 		bool is_receiving=false;
-		bool isCompleted() {
+		bool complete_msg_sent=false;
+		bool isCompleted() const {
 			return received_size == buffer.size();
 		}
 		std::string name;
@@ -43,8 +46,12 @@ private:
 	};
 	struct SendFile {
 		std::string destination;
+		std::string path;
 		ofFile file;
-		SendFile(std::string d, std::string f):destination(d),file(f){}
+		SendFile(std::string d, std::string p):destination(d),path(p){}
+		void open() { file.open(path); }
+		void close() { file.close(); }
+		bool isOpen() const { return file.is_open(); }
 	};
 	struct FileBox {
 		bool is_open;
@@ -55,6 +62,6 @@ private:
 	
 	std::vector<std::string> drag_files_;
 	
-	const uint64_t SEND_MAXSIZE = 32000;
-	const uint64_t RECV_MAXSIZE = 32000;
+	uint64_t SEND_MAXSIZE;
+	uint64_t RECV_MAXSIZE;
 };
