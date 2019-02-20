@@ -60,7 +60,7 @@ void ofxSearchNetworkNode::setName(const string &name)
 
 void ofxSearchNetworkNode::addToGroup(const string &group)
 {
-	addToGroup({group});
+	addToGroup(vector<string>{group});
 }
 void ofxSearchNetworkNode::addToGroup(const vector<string> &group)
 {
@@ -68,7 +68,7 @@ void ofxSearchNetworkNode::addToGroup(const vector<string> &group)
 }
 void ofxSearchNetworkNode::setGroup(const string &group, bool refresh)
 {
-	setGroup({group});
+	setGroup(vector<string>{group}, refresh);
 }
 void ofxSearchNetworkNode::setGroup(const vector<string> &group, bool refresh)
 {
@@ -89,6 +89,20 @@ void ofxSearchNetworkNode::request(const vector<string> &group)
 	for_each(begin(target_ip_), end(target_ip_), [this,&group](string &ip) {
 		sendMessage(ip, createRequestMessage(group, is_secret_mode_?makeHash(getSelfIp(ip)):0));
 	});
+}
+void ofxSearchNetworkNode::requestTo(const std::string &ip)
+{
+	sendMessage(ip, createRequestMessage(group_, is_secret_mode_?makeHash(getSelfIp(ip)):0));
+}
+void ofxSearchNetworkNode::disconnectFrom(const std::string &ip)
+{
+	auto it = known_nodes_.find(ip);
+	if(it == end(known_nodes_)) {
+		ofLogWarning("can't disconnect from unknown node : " + ip);
+		return;
+	}
+	unregisterNode(ip, it->second);
+	sendMessage(ip, createDisconnectMessage());
 }
 void ofxSearchNetworkNode::flush()
 {
@@ -206,10 +220,17 @@ bool ofxSearchNetworkNode::isSelfIp(const string &ip) const
 {
 	return any_of(begin(self_ip_), end(self_ip_), [&ip](const NetworkUtils::IPv4Interface &me){return ip==me.ip;});
 }
-string ofxSearchNetworkNode::getSelfIp(const string &an_ip_in_same_netwotk)
+string ofxSearchNetworkNode::getSelfIp(const string &an_ip_in_same_netwotk) const
 {
-	auto it = find_if(begin(self_ip_), end(self_ip_), [&an_ip_in_same_netwotk](NetworkUtils::IPv4Interface &me) {
+	auto it = find_if(begin(self_ip_), end(self_ip_), [&an_ip_in_same_netwotk](const NetworkUtils::IPv4Interface &me) {
 		return me.isInSameNetwork(an_ip_in_same_netwotk);
+	});
+	return it != end(self_ip_) ? it->ip : "";
+}
+string ofxSearchNetworkNode::getSelfIpForInterface(const string &interface_name) const
+{
+	auto it = find_if(begin(self_ip_), end(self_ip_), [&interface_name](const NetworkUtils::IPv4Interface &me) {
+		return me.name == interface_name;
 	});
 	return it != end(self_ip_) ? it->ip : "";
 }

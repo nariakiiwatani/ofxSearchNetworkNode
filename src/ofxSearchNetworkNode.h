@@ -55,6 +55,9 @@ public:
 	void request(const std::vector<std::string> &group);
 	void flush();
 	void disconnect();
+
+	void requestTo(const std::string &ip);
+	void disconnectFrom(const std::string &ip);
 	
 	void sleep();
 	void awake();
@@ -69,6 +72,7 @@ public:
 	
 	const std::map<std::string, Node>& getNodes() const { return known_nodes_; }
 	bool isSelfIp(const std::string &ip) const;
+	std::string getSelfIpForInterface(const std::string &interface_name) const;
 	
 	void setRequestHeartbeat(bool heartbeat, float request_interval=1, float timeout=3) {
 		need_heartbeat_=heartbeat;
@@ -122,5 +126,5 @@ private:
 	
 	bool is_secret_mode_=false;
 	std::string secret_key_;
-	std::string getSelfIp(const std::string &an_ip_in_same_netwotk);
+	std::string getSelfIp(const std::string &an_ip_in_same_netwotk) const;
 };
